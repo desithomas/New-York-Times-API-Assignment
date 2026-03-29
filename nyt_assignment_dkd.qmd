@@ -20,20 +20,19 @@ library(httr2)
 
 ```{r}
 #"Address" of the server;  creation of the base request object
-fetch_nyt_page <- function(page_number) {
+fetch_nyt_page <- function(search_term, page_number) {
 base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
-req <- request(base_url)
+filter_string <- paste0('section_name:("Technology" "Business" "Science") AND keywords.name:("', search_term, '")')
 
-#Add the parameters
-req <- req |> 
+req <- request(base_url) |>
   req_url_query(
-    q = "Data Science", 
+    fq = filter_string, 
     page = page_number,
-    begin_date = "20210101", #this is the date of the first article mentioning data science
+    begin_date = "20210101", #this is the date of the first article mentioning data science that we are starting with
     `api-key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
 
   ) |> 
-    req_retry(max_tries = 5) # Handles the rate limit gracefully [cite: 11]
+    req_retry(max_tries = 5) #Set rate limit for tries
   
 
 req$url #shows the url creation is successful in the console
@@ -55,35 +54,20 @@ names(raw_data$response)
 #can't fetch all pages at the same time
 pages_being_fetched <- 0:4
 
-all_results <- pages_being_fetched |> 
-  map(fetch_nyt_page)
+search_terms <- c("Artificial Intelligence", "Data Science")
+years <- 2021:2025
+
+#grid creation
+search_grid <- expand_grid(term = search_terms, year = years)
+
+#tibble
+print(search_grid)
+
 ```
 
 #Data Transformation
 
 ```{r}
-articles_list <- results_all |> 
-  map(\(page) page$response$docs) |> 
-  list_flatten()
 
-nyt_data <- tibble(raw_stuff = articles_list) |> 
-  unnest_wider(raw_stuff)
-
-nyt_data <- tibble(raw_stuff = articles_list) |> 
-  unnest_wider(raw_stuff)
-
-nyt_final <- nyt_data |> 
-  select(
-    pub_date, 
-    headline, 
-    snippet, 
-    section_name, 
-    web_url
-  ) |> 
-  unnest_wider(headline, names_sep = "_") |> 
-  mutate(pub_date = as.Date(pub_date)) # Turn string dates to actual dates as objects
-
-
-print(nyt_final)
 ```
 
