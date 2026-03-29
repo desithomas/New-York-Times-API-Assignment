@@ -35,13 +35,12 @@ req <- req |>
   ) |> 
     req_retry(max_tries = 5) # Handles the rate limit gracefully [cite: 11]
   
-  resp <- req |> req_perform()
-}
+
 req$url #shows the url creation is successful in the console
 
-resp <- req |> # request and response; make sure you authorized your app in the NYT Developer or you get HTTP 401 Unauthorized; make sure that the API is enabled in your app
+resp <- req |> # request and response; make sure you authorized your app in the NYT Developer or you get HTTP 401 Unauthorized; make sure that the API is enabled in your app. Try restarting R session. 
   req_perform()
-
+}
 #script was not running due to nchar(Sys.getenv("NYT_API_KEY")) returning a 0 in the console. If this occurs, then you should restart R
 
 resp |> resp_status_desc()
@@ -53,8 +52,38 @@ raw_data <- resp |>
 #check the names of the articles 
 names(raw_data$response)
   
-
+#can't fetch all pages at the same time
 pages_being_fetched <- 0:4
-all_results <- pages_to_fetch |> 
-  map(pages_being_fetched)
+
+all_results <- pages_being_fetched |> 
+  map(fetch_nyt_page)
 ```
+
+#Data Transformation
+
+```{r}
+articles_list <- results_all |> 
+  map(\(page) page$response$docs) |> 
+  list_flatten()
+
+nyt_data <- tibble(raw_stuff = articles_list) |> 
+  unnest_wider(raw_stuff)
+
+nyt_data <- tibble(raw_stuff = articles_list) |> 
+  unnest_wider(raw_stuff)
+
+nyt_final <- nyt_data |> 
+  select(
+    pub_date, 
+    headline, 
+    snippet, 
+    section_name, 
+    web_url
+  ) |> 
+  unnest_wider(headline, names_sep = "_") |> 
+  mutate(pub_date = as.Date(pub_date)) # Turn string dates to actual dates as objects
+
+
+print(nyt_final)
+```
+
