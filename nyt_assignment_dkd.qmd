@@ -12,3 +12,24 @@ For this assignment, we created a New York Times Developer account in order to a
 To answer these questions, we are going to ensure that we do not expose our API key first and foremost. It will be going into a .Renviron file (and stored in the .gitignore). Next, we will use the httr2 recommended workflow (since httr is deprecated); there will be a base request and appending of the query parameters. In the API documentation it notes that the API only returns 10 articles at a time, so we will have to use purrr::map most likely. It has a rate limit that ideally should not present much of a problem for this assignment. Our data transformation will include flattening the JSON using jsonlite before we use dplyr. A tibble is deemed sufficient for this assignment so that it the minimum product we will aim to achieve.
 
 Potential challenges: There is a 1,000 result cap which means that if the search for 'Artificial Intelligence' exceeds more than a 1,000 hits we will need to reconsider our approach strategy.
+
+```{r}
+library(tidyverse)
+library(httr2)
+```
+```{r}
+#"Address" of the server;  creation of the base request object
+base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+req <- request(base_url)
+
+#Add the parameters
+req <- req |> 
+  req_url_query(
+    q = "Data Science", 
+    begin_date = "20210101", #this is the date of the first article mentioning data science
+    `api_key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
+  )
+  
+req$url #shows the url creation is successful in the console
+```
+
