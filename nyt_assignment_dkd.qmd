@@ -28,7 +28,7 @@ req <- req |>
   req_url_query(
     q = "Data Science", 
     begin_date = "20210101", #this is the date of the first article mentioning data science
-    `api_key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
+    `api-key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
 
   )
   
@@ -39,7 +39,7 @@ resp <- req |> # request and response; make sure you authorized your app in the 
 
 #script was not running due to nchar(Sys.getenv("NYT_API_KEY")) returning a 0 in the console. If this occurs, then you should restart R
 
-resp |> resp_status_response()
+resp |> resp_status_desc()
 
 #Get the JSON
 raw_data <- resp |> 
@@ -49,4 +49,3 @@ raw_data <- resp |>
 names(raw_data$response)
   
 ```
-
