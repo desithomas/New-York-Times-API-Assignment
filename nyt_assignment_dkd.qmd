@@ -20,6 +20,7 @@ library(httr2)
 
 ```{r}
 #"Address" of the server;  creation of the base request object
+fetch_nyt_page <- function(page_number) {
 base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
 req <- request(base_url)
 
@@ -27,11 +28,15 @@ req <- request(base_url)
 req <- req |> 
   req_url_query(
     q = "Data Science", 
+    page = page_number,
     begin_date = "20210101", #this is the date of the first article mentioning data science
     `api-key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
 
-  )
+  ) |> 
+    req_retry(max_tries = 5) # Handles the rate limit gracefully [cite: 11]
   
+  resp <- req |> req_perform()
+}
 req$url #shows the url creation is successful in the console
 
 resp <- req |> # request and response; make sure you authorized your app in the NYT Developer or you get HTTP 401 Unauthorized; make sure that the API is enabled in your app
@@ -48,4 +53,8 @@ raw_data <- resp |>
 #check the names of the articles 
 names(raw_data$response)
   
+
+pages_being_fetched <- 0:4
+all_results <- pages_to_fetch |> 
+  map(pages_being_fetched)
 ```
