@@ -31,5 +31,20 @@ req <- req |>
   )
   
 req$url #shows the url creation is successful in the console
+
+resp <- req |> # request and response; make sure you authorized your app in the NYT Developer or you get HTTP 401 Unauthorized; make sure that the API is enabled in your app
+  req_perform()
+
+#script was not running due to nchar(Sys.getenv("NYT_API_KEY")) returning a 0 in the console. If this occurs, then you should restart R
+
+resp |> resp_status_response()
+
+#Get the JSON
+raw_data <- resp |> 
+  resp_body_json()
+
+#check the names of the articles 
+names(raw_data$response)
+  
 ```
 

@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 .DS_STORE
-
+.Renviron
+.Renviron.sh
