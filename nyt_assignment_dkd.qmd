@@ -19,50 +19,51 @@ library(httr2)
 ```
 
 ```{r}
-#"Address" of the server;  creation of the base request object
-fetch_nyt_page <- function(search_term, page_number) {
-base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
-filter_string <- paste0('section_name:("Technology" "Business" "Science") AND keywords.name:("', search_term, '")')
 
-req <- request(base_url) |>
-  req_url_query(
-    fq = filter_string, 
-    page = page_number,
-    begin_date = "20210101", #this is the date of the first article mentioning data science that we are starting with
-    `api-key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
 
-  ) |> 
-    req_retry(max_tries = 5) #Set rate limit for tries
-  
+library(tidyverse)
+library(httr2)
 
-req$url #shows the url creation is successful in the console
-
-resp <- req |> # request and response; make sure you authorized your app in the NYT Developer or you get HTTP 401 Unauthorized; make sure that the API is enabled in your app. Try restarting R session. 
-  req_perform()
-}
-#script was not running due to nchar(Sys.getenv("NYT_API_KEY")) returning a 0 in the console. If this occurs, then you should restart R
-
-resp |> resp_status_desc()
-
-#Get the JSON
-raw_data <- resp |> 
-  resp_body_json()
-
-#check the names of the articles 
-names(raw_data$response)
-  
-#can't fetch all pages at the same time
-pages_being_fetched <- 0:4
-
+# 1. Setup Parameters (Fixed the spelling of Intelligence)
 search_terms <- c("Artificial Intelligence", "Data Science")
 years <- 2021:2025
 
-#grid creation
+# 2. The Finalized Fetcher
+fetch_nyt_data <- function(term, year) { 
+  # A 12-second pause is mandatory to avoid the 'per-second' burst limit [cite: 13]
+  Sys.sleep(12)
+  
+  base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+
+  req <- request(base_url) |> 
+    req_url_query(
+      q = term,                          # Broad search across the whole article 
+      begin_date = paste0(year, "0101"), # January 1st 
+      end_date = paste0(year, "1231"),   # December 31st 
+      `api-key` = Sys.getenv("NYT_API_KEY") 
+    ) |> 
+    req_throttle(rate = 4 / 60) |>       # Ensures we stay under 5 requests per minute 
+    req_retry(max_tries = 5)             # Increased to 5 to handle temporary 429s better 
+
+  # performs the request and returns the JSON body 
+  resp <- req |> req_perform()
+  resp |> resp_body_json()
+}
+
+
 search_grid <- expand_grid(term = search_terms, year = years)
 
-#tibble
-print(search_grid)
+# remain patient, takes about 2-3 mins
+all_results <- search_grid |> 
+  mutate(api_data = pmap(list(term, year), fetch_nyt_data)) # [cite: 19]
 
+
+# extracts the 'hits' so you can verify the shift in frequency
+frequency_check <- all_results |> 
+  mutate(total_hits = map_dbl(api_data, \(x) x$response$meta$hits)) |> 
+  select(term, year, total_hits)
+
+print(frequency_check)
 ```
 
 #Data Transformation
