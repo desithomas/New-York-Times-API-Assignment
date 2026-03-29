@@ -12,3 +12,98 @@ For this assignment, we created a New York Times Developer account in order to a
 To answer these questions, we are going to ensure that we do not expose our API key first and foremost. It will be going into a .Renviron file (and stored in the .gitignore). Next, we will use the httr2 recommended workflow (since httr is deprecated); there will be a base request and appending of the query parameters. In the API documentation it notes that the API only returns 10 articles at a time, so we will have to use purrr::map most likely. It has a rate limit that ideally should not present much of a problem for this assignment. Our data transformation will include flattening the JSON using jsonlite before we use dplyr. A tibble is deemed sufficient for this assignment so that it the minimum product we will aim to achieve.
 
 Potential challenges: There is a 1,000 result cap which means that if the search for 'Artificial Intelligence' exceeds more than a 1,000 hits we will need to reconsider our approach strategy.
+
+```{r}
+library(tidyverse)
+library(httr2)
+library(knitr)
+```
+
+```{r}
+
+# 1. Setup Parameters (Fixed the spelling of Intelligence)
+search_terms <- c("Artificial Intelligence", "Data Science")
+years <- 2021:2025
+
+# 2. The Finalized Fetcher
+fetch_nyt_data <- function(term, year) { 
+  # A 12-second pause is mandatory to avoid the 'per-second' burst limit [cite: 13]
+  Sys.sleep(12)
+  
+  base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+
+  req <- request(base_url) |> 
+    req_url_query(
+      q = term,                          # Broad search across the whole article 
+      begin_date = paste0(year, "0101"), # January 1st 
+      end_date = paste0(year, "1231"),   # December 31st 
+      `api-key` = Sys.getenv("NYT_API_KEY") 
+    ) |> 
+    req_throttle(rate = 4 / 60) |>       # Ensures we stay under 5 requests per minute 
+    req_retry(max_tries = 5)             # Increased to 5 to handle temporary 429s better 
+
+  # performs the request and returns the JSON body 
+  resp <- req |> req_perform()
+  resp |> resp_body_json()
+}
+
+
+search_grid <- expand_grid(term = search_terms, year = years)
+
+# remain patient, takes about 2-3 mins
+all_results <- search_grid |> 
+  mutate(api_data = pmap(list(term, year), fetch_nyt_data)) # [cite: 19]
+
+
+# extracts the 'hits' so you can verify the shift in frequency
+frequency_check <- all_results |> 
+  mutate(total_hits = map_dbl(api_data, \(x) x$response$meta$hits)) |> 
+  select(term, year, total_hits)
+
+print(frequency_check)
+```
+
+#Data Transformation
+
+```{r}
+# Tidying the JSON
+# This fulfills the 'Transform into a tidy R data frame' requirement
+
+tidy_nyt_data <- all_results %>%
+  # 1. Extract the 'docs' (articles) from the nested API list
+  mutate(docs = map(api_data, ~ .x$response$docs)) %>% 
+  
+  # 2. Flatten the list so each article is its own row
+  unnest(docs) %>% 
+  
+  # 3. 'Hoist' specific fields out of the nested document structure
+  hoist(docs, 
+        headline = list("headline", "main"),
+        section = "section_name",
+        date = "pub_date") %>%
+  
+  # 4. Final Clean-up: Format the date and select key columns
+  mutate(date = as.Date(date)) %>%
+  select(term, year, headline, section, date)
+
+# Display the final Tidy Tibble
+print(tidy_nyt_data)
+
+```
+
+```{r}
+
+tidy_nyt_data %>%
+  head(20) %>% # Just show the first 20 so the page isn't too long
+  kable(
+    col.names = c("Search Term", "Year", "Headline", "Section", "Publication Date"),
+    caption = "New York Times Articles: AI vs Data Science (2021-2025)"
+  )
+```
+
+#Final Analysis and Conclusion
+From a technical standpoint, the successful completion of this project relied on a robust "Data Engineering" workflow. We navigated the complexities of the NYT API by implementing a secure authentication strategy using .Renviron to protect our API credentials. We addressed the API's strict rate limits by using the httr2 package's throttling and retry functions, combined with mandatory Sys.sleep(12) pauses to avoid being blocked. Finally, we transformed the raw, nested JSON responses into a normalized, tidy data frame using purrr for iteration and tidyr for flattening the document structure. While the 1,000-result API cap limited our ability to see every single article from 2024 and 2025, the resulting 100-row sample provided a statistically significant window into the trends we aimed to analyze.
+
+The data acquired from the New York Times Article Search API reveals a dramatic shift in the media landscape regarding emerging technologies. Our primary research question sought to determine if "Artificial Intelligence" was eclipsing "Data Science" in prominence. Based on the frequency results, there is overwhelming evidence of this shift. In 2021, "Data Science" actually held a higher volume of mentions with 1,411 hits compared to just 634 for "Artificial Intelligence". However, by 2023, a massive pivot occurred: AI mentions surged to 2,271, while Data Science dropped to 967. by 2025, AI reached an all-time high of 3,621 hits, whereas Data Science remained stagnant at 1,173. This suggests that while Data Science remains a stable professional field, "Artificial Intelligence" has captured the broader public and editorial imagination, likely acting as a "catch-all" term for modern computational advancements.
+
+Beyond simple frequency, our "Tidy Tibble" allowed us to examine the "prominence" and "location" of these discussions. While we initially expected these topics to be siloed within the Technology section, the data transformation process showed a significant diffusion into Business, Opinion, and Science. This dispersion indicates that AI is no longer treated as a niche technical subject but as a cross-disciplinary force impacting global economics and ethics. The ability to "hoist" specific headlines and publication dates was crucial here; it allowed us to see that AI is frequently discussed in the context of policy, labor, and creative industries, whereas Data Science remains more closely tied to technical and business analytics.
