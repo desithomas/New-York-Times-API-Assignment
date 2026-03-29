@@ -17,6 +17,7 @@ Potential challenges: There is a 1,000 result cap which means that if the search
 library(tidyverse)
 library(httr2)
 ```
+
 ```{r}
 #"Address" of the server;  creation of the base request object
 base_url <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
@@ -28,6 +29,7 @@ req <- req |>
     q = "Data Science", 
     begin_date = "20210101", #this is the date of the first article mentioning data science
     `api_key` = Sys.getenv("NYT_API_KEY") #do not put the actual API key here 
+
   )
   
 req$url #shows the url creation is successful in the console
