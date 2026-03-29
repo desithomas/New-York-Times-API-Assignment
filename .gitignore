@@ -1,13 +1,13 @@
-<<<<<<< HEAD
+
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 .DS_STORE
-=======
-.Rhistory
+
+
 .Rproj.user/
-.DS_Store
->>>>>>> 1d54731 (Initial commit: clean directory structure)
+
+
 .Renviron
 .Renviron.sh
