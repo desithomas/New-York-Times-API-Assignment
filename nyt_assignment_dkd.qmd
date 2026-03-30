@@ -5,7 +5,7 @@ format: html
 editor: visual
 ---
 
-##Approach
+# Approach
 
 For this assignment, we created a New York Times Developer account in order to access their APIs. We chose to use the New York Times Article Search API, as it would allow us to filter queries. One of our data analysis questions for this dataset is this: "How has the frequency and prominence of articles regarding 'Artificial Intelligence' shifted compared to 'Data Science' over the last five years?" We aim to assess whether the term “Data Science” is declining in usage relative to “Artificial Intelligence,” particularly as models, LLMs, and similar technologies are increasingly labeled under the broader AI umbrella. In addition, we will examine which NYT sections (Technology, Business, or Science) most frequently publish articles on these topics.
 
@@ -60,7 +60,7 @@ frequency_check <- all_results %>%
 print(frequency_check)
 ```
 
-#Data Transformation
+# Data Transformation
 
 ```{r}
 # Tidying the JSON
@@ -98,13 +98,15 @@ tidy_nyt_data %>%
   )
 ```
 
-#Final Analysis and Conclusion From a technical standpoint, the successful completion of this project relied on a robust "Data Engineering" workflow. We navigated the complexities of the NYT API by implementing a secure authentication strategy using .Renviron to protect our API credentials. We addressed the API's strict rate limits by using the httr2 package's throttling and retry functions, combined with mandatory Sys.sleep(12) pauses to avoid being blocked. Before we had added the retries and sleep limit, we frequently received 401 Unauthorized errors. Finally, we transformed the raw, nested JSON responses into a normalized, tidy data frame using purrr for iteration and tidyr for flattening the document structure. While the 1,000-result API cap limited our ability to see every single article from 2024 and 2025, the resulting 100-row sample provided a statistically significant window into the trends we aimed to analyze.
+# Final Analysis and Conclusion
+
+From a technical standpoint, the successful completion of this project relied on a robust "Data Engineering" workflow. We navigated the complexities of the NYT API by implementing a secure authentication strategy using .Renviron to protect our API credentials. We addressed the API's strict rate limits by using the httr2 package's throttling and retry functions, combined with mandatory Sys.sleep(12) pauses to avoid being blocked. Before we had added the retries and sleep limit, we frequently received 401 Unauthorized errors. Finally, we transformed the raw, nested JSON responses into a normalized, tidy data frame using purrr for iteration and tidyr for flattening the document structure. While the 1,000-result API cap limited our ability to see every single article from 2024 and 2025, the resulting 100-row sample provided a statistically significant window into the trends we aimed to analyze.
 
 The data acquired from the New York Times Article Search API reveals a dramatic shift in the media landscape regarding emerging technologies. Our primary research question sought to determine if "Artificial Intelligence" was eclipsing "Data Science" in prominence. Based on the frequency results, there is overwhelming evidence of this shift. In 2021, "Data Science" actually held a higher volume of mentions with 1,411 hits compared to just 634 for "Artificial Intelligence". However, by 2023, a massive pivot occurred: AI mentions surged to 2,271, while Data Science dropped to 967. by 2025, AI reached an all-time high of 3,621 hits, whereas Data Science remained stagnant at 1,173. This suggests that while Data Science remains a stable professional field, "Artificial Intelligence" has captured the broader public and editorial imagination, likely acting as a "catch-all" term for modern computational advancements.
 
 Beyond simple frequency, our "Tidy Tibble" allowed us to examine the "prominence" and "location" of these discussions. While we initially expected these topics to be siloed within the Technology section, the data transformation process showed a significant diffusion into Business, Opinion, and Science. This dispersion indicates that AI is no longer treated as a niche technical subject but as a cross-disciplinary force impacting global economics and ethics. The ability to "hoist" specific headlines and publication dates was crucial here; it allowed us to see that AI is frequently discussed in the context of policy, labor, and creative industries, whereas Data Science remains more closely tied to technical and business analytics.
 
-##Citation 
+# Citation
 
 Google DeepMind. (2026). Gemini 3.1 Thinking [Large language model].
 https://gemini.google.com. Accessed March 28 - 29, 2026
