@@ -106,3 +106,6 @@ Beyond simple frequency, our "Tidy Tibble" allowed us to examine the "prominence
 
 ##Citation 
 
+Google DeepMind. (2026). Gemini 3.1 Thinking [Large language model].
+https://gemini.google.com. Accessed March 28 - 29, 2026
+
